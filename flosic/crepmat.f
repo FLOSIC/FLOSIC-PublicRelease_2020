@@ -18,10 +18,12 @@ C
        INCLUDE  'PARAMA2'  
        INTEGER :: I, ICOL, IDEF, IDIM, IEVC, IGRP, II, IIDIM, INDEX,
      & IOP, IREP, IROW, ISQ, J, JDIM, JEVC, JJ, JREP, JSQ, K, KDMREP,
-     & KGRP, KK, KREP, MREP, NDUM
+     & KGRP, KK, KREP, MREP, NDUM,
+     & ICOUNT, NCOUNT
        REAL*8 :: ALBEST , ALPHA, CHAR, DUMMY, E, ELEM, ERROR, F, G, H,
      & OPREAD, PROD, SCRATCH, SUM, TOL, TOLER, TRACE1, TRACE2, TREP,
      & UNIT
+       REAL*8,ALLOCATABLE :: REP1D(:)
        SAVE
        LOGICAL IREAD,EXIST
        DIMENSION KDMREP(MAX_REP),TREP(5,5,MX_GRP),OPREAD(3,3,MX_GRP)
@@ -81,9 +83,31 @@ C
          CALL STOPIT
         END IF
         READ(80,ERR=40)(KDMREP(I), I=1,KREP)
-        READ(80,ERR=40)((((REP(J,I,IGRP,IREP), 
-     &                 J=1,KDMREP(IREP)), I=1,KDMREP(IREP)), 
-     &                 IGRP=1,KGRP), IREP=1,KREP)
+  
+        !The read statement below has an issue with -O3 flag
+!        READ(80,ERR=40)((((REP(J,I,IGRP,IREP), 
+!     &                 J=1,KDMREP(IREP)), I=1,KDMREP(IREP)), 
+!     &                 IGRP=1,KGRP), IREP=1,KREP)
+        !The read statement above is rewritten for -O3 flag
+        NCOUNT=0
+        DO IREP=1,KREP
+         NCOUNT=NCOUNT+KDMREP(IREP)*KDMREP(IREP)*KGRP
+        END DO
+        ALLOCATE(REP1D(NCOUNT))
+        READ(80) (REP1D(ICOUNT),ICOUNT=1,NCOUNT)
+        ICOUNT=0
+        DO IREP=1,KREP
+         DO IGRP=1,KGRP
+          DO I=1,KDMREP(IREP)
+           DO J=1,KDMREP(IREP)
+            ICOUNT=ICOUNT+1
+            REP(J,I,IGRP,IREP)=REP1D(ICOUNT)
+           END DO
+          END DO
+         END DO
+        END DO
+        DEALLOCATE(REP1D)
+
         GOTO 50
    40   PRINT *,'CREPMAT: OLD REPRESENTATION MATRIX'
         PRINT *,'IS NOT AVAILABLE OR INCONSISTENT WITH NEW GRPMAT'
@@ -358,9 +382,30 @@ C
        WRITE(80)(((RMAT(J,I,IGRP), J=1,3), I=1,3), IGRP=1,NGRP)
        WRITE(80)N_REP
        WRITE(80)(NDMREP(IREP), IREP=1,N_REP)
-       WRITE(80)((((REP(J,I,IGRP,IREP), 
-     &          J=1,NDMREP(IREP)), I=1,NDMREP(IREP)), 
-     &          IGRP=1,NGRP), IREP=1,N_REP)
+       !The write statement below has a problem with -O3 flag
+!       WRITE(80)((((REP(J,I,IGRP,IREP), 
+!     &          J=1,NDMREP(IREP)), I=1,NDMREP(IREP)), 
+!     &          IGRP=1,NGRP), IREP=1,N_REP)
+       !The above write statement is rewritten for -O3 flag
+       ! NCOUNT is sum of NDMREP(IREP)**2 * NGRP for each IREP
+       NCOUNT=0
+       DO IREP=1,N_REP
+        NCOUNT=NCOUNT+NDMREP(IREP)*NDMREP(IREP)*NGRP
+       END DO
+       ALLOCATE(REP1D(NCOUNT))
+       ICOUNT=0
+       DO IREP=1,N_REP
+        DO IGRP=1,NGRP
+         DO I=1,NDMREP(IREP)
+          DO J=1,NDMREP(IREP)
+           ICOUNT=ICOUNT+1
+           REP1D(ICOUNT)=REP(J,I,IGRP,IREP)
+          END DO
+         END DO
+        END DO
+       END DO
+       WRITE(80) (REP1D(ICOUNT),ICOUNT=1,NCOUNT)
+       DEALLOCATE(REP1D)
        CLOSE(80)
 C
 C
