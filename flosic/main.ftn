@@ -9,9 +9,6 @@ C
 %endif
 C     ------------------------------------------------------------------
 C
-C
-C
-C
       use debug1
       use global_inputs,only : EXCITED1,DOSJNT1,WFGRID1,RHOGRID1,
      & DOSOCCU1,MATDIPOLE1,NONSCF1,FRAGMENT1,SOLVENT1,DFTD31,CALCTYPE1,
