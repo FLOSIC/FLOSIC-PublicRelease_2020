@@ -399,7 +399,7 @@ def gen_cube_data(options,parameters,atoms,coords):
         for i in s_loop:
            grad2 = dx[i]**2 + dy[i]**2 + dz[i]**2
            vwke  = grad2/8.0/n[i]
-           Dh     = 3.0/10.0*(math.pi**2)**(5./3.)*n[i]**(5./3.)
+           Dh     = 3.0/10.0*(3*math.pi**2)**(5./3.)*n[i]**(5./3.)
            D = tau[i] - vwke
            function +=   factor[i] * 1.0/( 1.0 + (D/Dh)**2 )
     elif (what_func == "D"):
